@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -12,13 +12,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 // NOAA API proxy endpoint to avoid CORS issues
 app.get('/api/tides', async (req, res) => {
     const { station, beginDate, range } = req.query;
-    
+
     if (!station || !beginDate || !range) {
         return res.status(400).json({ error: 'Missing required parameters: station, beginDate, range' });
     }
-    
+
     const noaaUrl = `https://tidesandcurrents.noaa.gov/api/datagetter?product=predictions&application=TidesApp&begin_date=${beginDate}&range=${range}&datum=MLLW&station=${station}&time_zone=lst_ldt&units=english&format=json`;
-    
+
     try {
         const response = await fetch(noaaUrl);
         const data = await response.json();
@@ -32,13 +32,13 @@ app.get('/api/tides', async (req, res) => {
 // Get tide predictions for a full day (hourly intervals)
 app.get('/api/tides/daily', async (req, res) => {
     const { station, date } = req.query;
-    
+
     if (!station || !date) {
         return res.status(400).json({ error: 'Missing required parameters: station, date' });
     }
-    
+
     const noaaUrl = `https://tidesandcurrents.noaa.gov/api/datagetter?product=predictions&application=TidesApp&begin_date=${date}&range=24&datum=MLLW&station=${station}&time_zone=lst_ldt&units=english&interval=h&format=json`;
-    
+
     try {
         const response = await fetch(noaaUrl);
         const data = await response.json();
@@ -52,13 +52,13 @@ app.get('/api/tides/daily', async (req, res) => {
 // Get high/low tide predictions
 app.get('/api/tides/hilo', async (req, res) => {
     const { station, beginDate, endDate } = req.query;
-    
+
     if (!station || !beginDate || !endDate) {
         return res.status(400).json({ error: 'Missing required parameters: station, beginDate, endDate' });
     }
-    
+
     const noaaUrl = `https://tidesandcurrents.noaa.gov/api/datagetter?product=predictions&application=TidesApp&begin_date=${beginDate}&end_date=${endDate}&datum=MLLW&station=${station}&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
-    
+
     try {
         const response = await fetch(noaaUrl);
         const data = await response.json();
