@@ -774,34 +774,46 @@ function drawTideChart(canvasId, chartData) {
     ctx.textAlign = 'left';
     ctx.fillText(`Min: ${state.config.minimumHeight}ft`, padding.left + 5, getY(state.config.minimumHeight) - 5);
 
-    // Tide line
+    // Gradient fill between curve and minimum tide line
+    const minY = getY(state.config.minimumHeight);
+    const gradient = ctx.createLinearGradient(0, padding.top, 0, minY);
+    gradient.addColorStop(0, 'rgba(72, 202, 228, 0.4)');
+    gradient.addColorStop(1, 'rgba(72, 202, 228, 0.1)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+
+    // Filter out wrap-around points and track valid ones
+    let lastMinutes = -1;
+    const validPoints = chartData.filter(point => {
+        const minutes = point.time.hours * 60 + point.time.minutes;
+        if (minutes <= lastMinutes) return false;
+        lastMinutes = minutes;
+        return true;
+    });
+
+    // Start at minimum line at first point's X
+    ctx.moveTo(getX(validPoints[0].time), minY);
+    // Draw up along the curve
+    validPoints.forEach(point => {
+        ctx.lineTo(getX(point.time), getY(point.height));
+    });
+    // Draw down to minimum line at last point's X
+    ctx.lineTo(getX(validPoints[validPoints.length - 1].time), minY);
+    // Close along the minimum line
+    ctx.closePath();
+    ctx.fill();
+
+    // Tide line (draw on top of fill)
     ctx.strokeStyle = '#48CAE4';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    chartData.forEach((point, i) => {
+    validPoints.forEach((point, i) => {
         const x = getX(point.time);
         const y = getY(point.height);
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
     });
     ctx.stroke();
-
-    // Gradient fill under curve
-    const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
-    gradient.addColorStop(0, 'rgba(72, 202, 228, 0.3)');
-    gradient.addColorStop(1, 'rgba(72, 202, 228, 0.05)');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    chartData.forEach((point, i) => {
-        const x = getX(point.time);
-        const y = getY(point.height);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-    });
-    ctx.lineTo(getX(chartData[chartData.length - 1].time), height - padding.bottom);
-    ctx.lineTo(getX(chartData[0].time), height - padding.bottom);
-    ctx.closePath();
-    ctx.fill();
 
     // X-axis (time labels)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
