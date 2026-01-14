@@ -809,7 +809,7 @@ function drawTideChart(canvasId, chartData) {
     ctx.textAlign = 'center';
     for (let h = 0; h <= 24; h += 4) {
         const x = getX({ hours: h, minutes: 0 });
-        const label = h === 0 ? '12am' : h === 12 ? '12pm' : h < 12 ? `${h}am` : `${h - 12}pm`;
+        const label = h === 0 || h === 24 ? '12am' : h === 12 ? '12pm' : h < 12 ? `${h}am` : `${h - 12}pm`;
         ctx.fillText(label, x, height - 10);
     }
 
