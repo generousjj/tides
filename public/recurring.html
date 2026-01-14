@@ -144,30 +144,57 @@
                 <p class="link-hint">Share this link with your team - it will always show their upcoming practices!</p>
             </div>
 
-            <!-- 4-Week Calendar with Navigation -->
-            <div class="calendar-section">
-                <div class="calendar-header">
-                    <h3 class="section-title">📅 Practice Calendar</h3>
-                    <div class="calendar-legend">
-                        <span class="legend-item safe"><span class="legend-dot"></span> Safe</span>
-                        <span class="legend-item caution"><span class="legend-dot"></span> Caution</span>
-                        <span class="legend-item no-practice"><span class="legend-dot"></span> No Practice</span>
+            <!-- View Toggle -->
+            <div class="view-toggle">
+                <button type="button" class="view-tab active" data-view="calendar">📅 Calendar</button>
+                <button type="button" class="view-tab" data-view="list">📋 List</button>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="calendar-view" class="view-content active">
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <div class="calendar-legend">
+                            <span class="legend-item safe"><span class="legend-dot"></span> Safe</span>
+                            <span class="legend-item caution"><span class="legend-dot"></span> Caution</span>
+                            <span class="legend-item no-practice"><span class="legend-dot"></span> No Practice</span>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Navigation -->
+                    <div class="calendar-nav">
+                        <button type="button" id="prev-period-btn" class="nav-arrow">
+                            ← Previous 4 Weeks
+                        </button>
+                        <span id="period-label" class="period-label">Current Period</span>
+                        <button type="button" id="next-period-btn" class="nav-arrow">
+                            Next 4 Weeks →
+                        </button>
+                    </div>
+
+                    <div id="calendar-grid" class="calendar-grid">
+                        <!-- Dynamically populated -->
                     </div>
                 </div>
+            </div>
 
-                <!-- Calendar Navigation -->
-                <div class="calendar-nav">
-                    <button type="button" id="prev-period-btn" class="nav-arrow">
-                        ← Previous 4 Weeks
-                    </button>
-                    <span id="period-label" class="period-label">Current Period</span>
-                    <button type="button" id="next-period-btn" class="nav-arrow">
-                        Next 4 Weeks →
-                    </button>
-                </div>
+            <!-- List View -->
+            <div id="list-view" class="view-content">
+                <div class="list-section">
+                    <!-- List Navigation -->
+                    <div class="calendar-nav">
+                        <button type="button" id="prev-list-btn" class="nav-arrow">
+                            ← Previous
+                        </button>
+                        <span id="list-period-label" class="period-label">Current Period</span>
+                        <button type="button" id="next-list-btn" class="nav-arrow">
+                            Next →
+                        </button>
+                    </div>
 
-                <div id="calendar-grid" class="calendar-grid">
-                    <!-- Dynamically populated -->
+                    <div id="list-container" class="list-container">
+                        <!-- Dynamically populated -->
+                    </div>
                 </div>
             </div>
 

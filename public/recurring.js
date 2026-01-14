@@ -8,6 +8,7 @@ const state = {
     config: null,
     practiceResults: [], // Stores fetched practice tide data for current period
     periodOffset: 0, // 0 = current 4 weeks, 1 = next 4 weeks, -1 = previous 4 weeks
+    currentView: 'calendar', // 'calendar' or 'list'
     isLoading: false
 };
 
@@ -35,6 +36,15 @@ const elements = {
     calendarGrid: document.getElementById('calendar-grid'),
     detailSection: document.getElementById('detail-section'),
     detailContainer: document.getElementById('detail-container'),
+
+    // View Toggle
+    viewTabs: document.querySelectorAll('.view-tab'),
+    calendarView: document.getElementById('calendar-view'),
+    listView: document.getElementById('list-view'),
+    listContainer: document.getElementById('list-container'),
+    listPeriodLabel: document.getElementById('list-period-label'),
+    prevListBtn: document.getElementById('prev-list-btn'),
+    nextListBtn: document.getElementById('next-list-btn'),
 
     // Calendar Navigation
     prevPeriodBtn: document.getElementById('prev-period-btn'),
@@ -77,6 +87,37 @@ function attachEventListeners() {
     // Calendar navigation
     elements.prevPeriodBtn.addEventListener('click', () => navigatePeriod(-1));
     elements.nextPeriodBtn.addEventListener('click', () => navigatePeriod(1));
+
+    // List navigation
+    elements.prevListBtn.addEventListener('click', () => navigatePeriod(-1));
+    elements.nextListBtn.addEventListener('click', () => navigatePeriod(1));
+
+    // View toggle
+    elements.viewTabs.forEach(tab => {
+        tab.addEventListener('click', () => switchView(tab.dataset.view));
+    });
+}
+
+function switchView(view) {
+    state.currentView = view;
+
+    // Update tab active state
+    elements.viewTabs.forEach(t => {
+        t.classList.toggle('active', t.dataset.view === view);
+    });
+
+    // Show/hide views
+    elements.calendarView.classList.toggle('active', view === 'calendar');
+    elements.listView.classList.toggle('active', view === 'list');
+
+    // Hide detail section when switching
+    elements.detailSection.classList.add('hidden');
+
+    // Update URL with new view preference (only if config exists)
+    if (state.config) {
+        updateUrl();
+        generateShareLink();
+    }
 }
 
 function toggleCustomStation() {
@@ -91,6 +132,10 @@ function toggleCustomStation() {
 function loadFromUrlParams() {
     const params = new URLSearchParams(window.location.search);
     if (!params.has('days')) return;
+
+    // Immediately hide setup panel since we have URL params
+    elements.setupPanel.classList.add('hidden');
+    elements.dashboard.classList.remove('hidden');
 
     const station = params.get('station');
     if (station) {
@@ -116,8 +161,16 @@ function loadFromUrlParams() {
     if (params.has('start')) elements.startTime.value = params.get('start');
     if (params.has('end')) elements.endTime.value = params.get('end');
 
+    // Load view preference from URL
+    if (params.has('view')) {
+        const view = params.get('view');
+        if (view === 'list' || view === 'calendar') {
+            switchView(view);
+        }
+    }
+
     // Auto-load dashboard
-    setTimeout(() => loadDashboard(), 500);
+    setTimeout(() => loadDashboard(), 100);
 }
 
 // === Station Loading ===
@@ -213,6 +266,7 @@ function updateUrl() {
     params.set('days', state.config.practiceDays.join(','));
     params.set('start', state.config.startTime);
     params.set('end', state.config.endTime);
+    params.set('view', state.currentView);
 
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState({}, '', newUrl);
@@ -225,6 +279,7 @@ function generateShareLink() {
     params.set('days', state.config.practiceDays.join(','));
     params.set('start', state.config.startTime);
     params.set('end', state.config.endTime);
+    params.set('view', state.currentView);
 
     const link = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     elements.shareLink.value = link;
@@ -268,11 +323,16 @@ function updatePeriodLabel() {
     const endDay = periodEnd.getDate();
     const year = periodEnd.getFullYear();
 
+    let labelText;
     if (startMonth === endMonth) {
-        elements.periodLabel.textContent = `${startMonth} ${startDay} - ${endDay}, ${year}`;
+        labelText = `${startMonth} ${startDay} - ${endDay}, ${year}`;
     } else {
-        elements.periodLabel.textContent = `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+        labelText = `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
     }
+
+    // Update both labels
+    elements.periodLabel.textContent = labelText;
+    elements.listPeriodLabel.textContent = labelText;
 }
 
 // === Forecast Fetching ===
@@ -301,6 +361,7 @@ async function fetchPracticeForecast() {
 
         updatePeriodLabel();
         renderCalendar();
+        renderList();
 
     } catch (error) {
         console.error('Error fetching forecast:', error);
@@ -448,6 +509,54 @@ function renderCalendar() {
             if (index >= 0) showPracticeDetail(index);
         });
     });
+}
+
+function renderList() {
+    // Filter to only show today and future practices
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const futurePractices = state.practiceResults.filter((result, index) => {
+        const practiceDate = new Date(result.date);
+        practiceDate.setHours(0, 0, 0, 0);
+        return practiceDate >= today;
+    });
+
+    if (futurePractices.length === 0) {
+        elements.listContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No upcoming practice days in this period.</p>';
+        return;
+    }
+
+    const html = futurePractices.map((result) => {
+        // Find the original index for showPracticeDetail
+        const originalIndex = state.practiceResults.indexOf(result);
+        const dayName = DAY_NAMES[result.date.getDay()];
+        const dateStr = formatDateShort(result.date);
+        const statusClass = result.isGood ? 'safe' : 'caution';
+        const statusText = result.isGood ? '✓ Safe' : '⚠ Caution';
+        const tideValue = result.minTide !== null ? `${result.minTide.toFixed(1)} ft` : '--';
+        const marginValue = result.margin !== null ?
+            (result.margin >= 0 ? `+${result.margin.toFixed(1)}` : result.margin.toFixed(1)) : '';
+        const marginClass = result.margin !== null ? (result.margin >= 0 ? 'positive' : 'negative') : '';
+
+        return `
+            <div class="list-item ${statusClass}" onclick="showPracticeDetail(${originalIndex})">
+                <div class="list-item-date">
+                    <div class="date-day">${dayName}</div>
+                    <div class="date-full">${dateStr}</div>
+                </div>
+                <div class="list-item-status">
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+                <div class="list-item-tide">
+                    <div class="tide-value">${tideValue}</div>
+                    ${marginValue ? `<div class="tide-margin ${marginClass}">${marginValue} ft</div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    elements.listContainer.innerHTML = html;
 }
 
 function showPracticeDetail(index) {
