@@ -166,14 +166,20 @@
                         <button type="button" id="prev-period-btn" class="nav-arrow">
                             ← Previous 4 Weeks
                         </button>
-                        <span id="period-label" class="period-label">Current Period</span>
+                        <span id="period-label" class="period-label clickable">Current Period</span>
                         <button type="button" id="next-period-btn" class="nav-arrow">
                             Next 4 Weeks →
                         </button>
                     </div>
 
-                    <div id="calendar-grid" class="calendar-grid">
-                        <!-- Dynamically populated -->
+                    <div id="calendar-wrapper" class="calendar-wrapper">
+                        <div id="calendar-loading" class="inline-loading hidden">
+                            <div class="inline-loader"></div>
+                            <span>Loading...</span>
+                        </div>
+                        <div id="calendar-grid" class="calendar-grid">
+                            <!-- Dynamically populated -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -186,14 +192,20 @@
                         <button type="button" id="prev-list-btn" class="nav-arrow">
                             ← Previous
                         </button>
-                        <span id="list-period-label" class="period-label">Current Period</span>
+                        <span id="list-period-label" class="period-label clickable">Current Period</span>
                         <button type="button" id="next-list-btn" class="nav-arrow">
                             Next →
                         </button>
                     </div>
 
-                    <div id="list-container" class="list-container">
-                        <!-- Dynamically populated -->
+                    <div id="list-wrapper" class="list-wrapper">
+                        <div id="list-loading" class="inline-loading hidden">
+                            <div class="inline-loader"></div>
+                            <span>Loading...</span>
+                        </div>
+                        <div id="list-container" class="list-container">
+                            <!-- Dynamically populated -->
+                        </div>
                     </div>
                 </div>
             </div>

@@ -51,6 +51,10 @@ const elements = {
     nextPeriodBtn: document.getElementById('next-period-btn'),
     periodLabel: document.getElementById('period-label'),
 
+    // Inline loading
+    calendarLoading: document.getElementById('calendar-loading'),
+    listLoading: document.getElementById('list-loading'),
+
     loadingOverlay: document.getElementById('loading-overlay')
 };
 
@@ -87,10 +91,12 @@ function attachEventListeners() {
     // Calendar navigation
     elements.prevPeriodBtn.addEventListener('click', () => navigatePeriod(-1));
     elements.nextPeriodBtn.addEventListener('click', () => navigatePeriod(1));
+    elements.periodLabel.addEventListener('click', goToToday);
 
     // List navigation
     elements.prevListBtn.addEventListener('click', () => navigatePeriod(-1));
     elements.nextListBtn.addEventListener('click', () => navigatePeriod(1));
+    elements.listPeriodLabel.addEventListener('click', goToToday);
 
     // View toggle
     elements.viewTabs.forEach(tab => {
@@ -302,7 +308,13 @@ function copyLinkToClipboard() {
 // === Period Navigation ===
 async function navigatePeriod(direction) {
     state.periodOffset += direction;
-    await fetchPracticeForecast();
+    await fetchPracticeForecast(true); // true = inline loading
+}
+
+async function goToToday() {
+    if (state.periodOffset === 0) return; // Already at today
+    state.periodOffset = 0;
+    await fetchPracticeForecast(true);
 }
 
 function updatePeriodLabel() {
@@ -330,14 +342,23 @@ function updatePeriodLabel() {
         labelText = `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
     }
 
+    // Add "Today" hint if not at current period
+    if (state.periodOffset !== 0) {
+        labelText += ' (tap for today)';
+    }
+
     // Update both labels
     elements.periodLabel.textContent = labelText;
     elements.listPeriodLabel.textContent = labelText;
 }
 
 // === Forecast Fetching ===
-async function fetchPracticeForecast() {
-    setLoading(true);
+async function fetchPracticeForecast(inlineLoading = false) {
+    if (inlineLoading) {
+        setInlineLoading(true);
+    } else {
+        setLoading(true);
+    }
     state.practiceResults = [];
 
     // Calculate the date range for this period
@@ -367,7 +388,11 @@ async function fetchPracticeForecast() {
         console.error('Error fetching forecast:', error);
         showError('Failed to fetch tide data.');
     } finally {
-        setLoading(false);
+        if (inlineLoading) {
+            setInlineLoading(false);
+        } else {
+            setLoading(false);
+        }
     }
 }
 
@@ -642,6 +667,12 @@ function compareTime(t1, t2) {
 function setLoading(isLoading) {
     state.isLoading = isLoading;
     elements.loadingOverlay.classList.toggle('hidden', !isLoading);
+}
+
+function setInlineLoading(isLoading) {
+    state.isLoading = isLoading;
+    elements.calendarLoading.classList.toggle('hidden', !isLoading);
+    elements.listLoading.classList.toggle('hidden', !isLoading);
 }
 
 function showError(message) {
