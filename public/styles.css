@@ -2395,6 +2395,10 @@ input::placeholder {
     color: var(--text-secondary);
 }
 
+.direction-mixed {
+    color: #9b59b6;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .landing-title {

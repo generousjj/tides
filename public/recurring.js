@@ -661,35 +661,50 @@ async function fetchAndDrawChart(date) {
 function getTideDirection(chartData) {
     const practiceStart = parseTime(state.config.startTime);
     const practiceEnd = parseTime(state.config.endTime);
+    const startMinutes = practiceStart.hours * 60 + practiceStart.minutes;
+    const endMinutes = practiceEnd.hours * 60 + practiceEnd.minutes;
 
-    // Find tide heights at start and end of practice
-    let startHeight = null;
-    let endHeight = null;
-
-    for (const point of chartData) {
+    // Get all points during practice
+    const practicePoints = chartData.filter(point => {
         const minutes = point.time.hours * 60 + point.time.minutes;
-        const startMinutes = practiceStart.hours * 60 + practiceStart.minutes;
-        const endMinutes = practiceEnd.hours * 60 + practiceEnd.minutes;
+        return minutes >= startMinutes && minutes <= endMinutes;
+    });
 
-        if (startHeight === null && minutes >= startMinutes) {
-            startHeight = point.height;
-        }
-        if (minutes <= endMinutes) {
-            endHeight = point.height;
-        }
-    }
+    if (practicePoints.length < 2) return '';
 
-    if (startHeight !== null && endHeight !== null) {
-        const diff = endHeight - startHeight;
-        if (Math.abs(diff) < 0.1) {
-            return '<span class="direction-neutral">↔️ Tide relatively stable during practice</span>';
-        } else if (diff > 0) {
-            return `<span class="direction-rising">📈 Tide RISING during practice (+${diff.toFixed(1)}ft)</span>`;
-        } else {
-            return `<span class="direction-falling">📉 Tide FALLING during practice (${diff.toFixed(1)}ft)</span>`;
-        }
+    // Find min and max during practice
+    const heights = practicePoints.map(p => p.height);
+    const minHeight = Math.min(...heights);
+    const maxHeight = Math.max(...heights);
+    const startHeight = practicePoints[0].height;
+    const endHeight = practicePoints[practicePoints.length - 1].height;
+
+    // Check if tide changes direction (has a peak or trough during practice)
+    const minIndex = heights.indexOf(minHeight);
+    const maxIndex = heights.indexOf(maxHeight);
+
+    const hasLocalMin = minIndex > 0 && minIndex < heights.length - 1;
+    const hasLocalMax = maxIndex > 0 && maxIndex < heights.length - 1;
+
+    const diff = endHeight - startHeight;
+    const range = maxHeight - minHeight;
+
+    if (hasLocalMax && !hasLocalMin) {
+        // Tide rises then falls
+        return `<span class="direction-mixed">🔄 Tide RISES then FALLS (peak: ${maxHeight.toFixed(1)}ft)</span>`;
+    } else if (hasLocalMin && !hasLocalMax) {
+        // Tide falls then rises
+        return `<span class="direction-mixed">🔄 Tide FALLS then RISES (low: ${minHeight.toFixed(1)}ft)</span>`;
+    } else if (hasLocalMin && hasLocalMax) {
+        // Multiple changes
+        return `<span class="direction-mixed">🔄 Tide changes direction (range: ${range.toFixed(1)}ft)</span>`;
+    } else if (Math.abs(diff) < 0.2) {
+        return '<span class="direction-neutral">↔️ Tide relatively stable during practice</span>';
+    } else if (diff > 0) {
+        return `<span class="direction-rising">📈 Tide RISING during practice (+${diff.toFixed(1)}ft)</span>`;
+    } else {
+        return `<span class="direction-falling">📉 Tide FALLING during practice (${diff.toFixed(1)}ft)</span>`;
     }
-    return '';
 }
 
 function drawTideChart(canvasId, chartData) {
@@ -805,12 +820,12 @@ function drawTideChart(canvasId, chartData) {
         ctx.fillText(`${h}ft`, padding.left - 8, getY(h) + 4);
     }
 
-    // Practice window label
-    ctx.fillStyle = 'rgba(72, 202, 228, 0.8)';
-    ctx.font = 'bold 10px Inter, sans-serif';
+    // Practice window label (at bottom, below x-axis)
+    ctx.fillStyle = 'rgba(72, 202, 228, 0.9)';
+    ctx.font = 'bold 9px Inter, sans-serif';
     ctx.textAlign = 'center';
     const labelX = (getX(practiceStart) + getX(practiceEnd)) / 2;
-    ctx.fillText('PRACTICE', labelX, padding.top + 15);
+    ctx.fillText('▲ PRACTICE ▲', labelX, height - 2);
 }
 
 
