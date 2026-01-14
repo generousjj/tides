@@ -2341,6 +2341,60 @@ input::placeholder {
     padding: var(--spacing-md);
 }
 
+/* Tide Chart Section */
+.tide-chart-section {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--glass-border);
+}
+
+.tide-chart-section h5 {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.tide-chart-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.tide-chart {
+    width: 100%;
+    height: 100%;
+}
+
+.chart-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.tide-direction {
+    margin-top: var(--spacing-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.direction-rising {
+    color: var(--success);
+}
+
+.direction-falling {
+    color: var(--warning);
+}
+
+.direction-neutral {
+    color: var(--text-secondary);
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .landing-title {

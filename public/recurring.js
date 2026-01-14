@@ -605,6 +605,16 @@ function showPracticeDetail(index) {
         <p class="detail-info">${tideInfo}</p>
         ${marginInfo ? `<p class="detail-margin">${marginInfo}</p>` : ''}
         <p class="detail-time">Practice window: ${formatTimeRange(state.config.startTime, state.config.endTime)}</p>
+        
+        <div class="tide-chart-section">
+            <h5>📈 Tide Chart</h5>
+            <div class="tide-chart-container">
+                <canvas id="detail-chart" class="tide-chart"></canvas>
+                <div id="chart-loading" class="chart-loading">Loading chart...</div>
+            </div>
+            <div id="tide-direction" class="tide-direction"></div>
+        </div>
+        
         <a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=${state.config.station}&units=standard&bdate=${formatDateForAPI(result.date)}&edate=${formatDateForAPI(result.date)}&timezone=LST/LDT&clock=12hour&datum=MLLW&interval=hilo&action=dailychart" 
            target="_blank" rel="noopener" class="noaa-link-btn" style="margin-top: 1rem;">
             🔗 View Full Details on NOAA
@@ -613,7 +623,196 @@ function showPracticeDetail(index) {
 
     elements.detailSection.classList.remove('hidden');
     elements.detailSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Fetch and draw the chart
+    fetchAndDrawChart(result.date);
 }
+
+async function fetchAndDrawChart(date) {
+    const dateStr = formatDateForAPI(date);
+    const chartLoading = document.getElementById('chart-loading');
+    const tideDirection = document.getElementById('tide-direction');
+
+    try {
+        const response = await fetch(`/api/tides/daily?station=${state.config.station}&date=${dateStr}`);
+        const data = await response.json();
+
+        if (data.predictions && data.predictions.length > 0) {
+            const chartData = data.predictions.map(p => ({
+                time: parseEventTime(p.t),
+                height: parseFloat(p.v)
+            }));
+
+            chartLoading.classList.add('hidden');
+            drawTideChart('detail-chart', chartData);
+
+            // Determine if tide is rising or falling during practice
+            const direction = getTideDirection(chartData);
+            tideDirection.innerHTML = direction;
+        } else {
+            chartLoading.textContent = 'Chart data unavailable';
+        }
+    } catch (error) {
+        console.error('Error fetching chart data:', error);
+        chartLoading.textContent = 'Failed to load chart';
+    }
+}
+
+function getTideDirection(chartData) {
+    const practiceStart = parseTime(state.config.startTime);
+    const practiceEnd = parseTime(state.config.endTime);
+
+    // Find tide heights at start and end of practice
+    let startHeight = null;
+    let endHeight = null;
+
+    for (const point of chartData) {
+        const minutes = point.time.hours * 60 + point.time.minutes;
+        const startMinutes = practiceStart.hours * 60 + practiceStart.minutes;
+        const endMinutes = practiceEnd.hours * 60 + practiceEnd.minutes;
+
+        if (startHeight === null && minutes >= startMinutes) {
+            startHeight = point.height;
+        }
+        if (minutes <= endMinutes) {
+            endHeight = point.height;
+        }
+    }
+
+    if (startHeight !== null && endHeight !== null) {
+        const diff = endHeight - startHeight;
+        if (Math.abs(diff) < 0.1) {
+            return '<span class="direction-neutral">↔️ Tide relatively stable during practice</span>';
+        } else if (diff > 0) {
+            return `<span class="direction-rising">📈 Tide RISING during practice (+${diff.toFixed(1)}ft)</span>`;
+        } else {
+            return `<span class="direction-falling">📉 Tide FALLING during practice (${diff.toFixed(1)}ft)</span>`;
+        }
+    }
+    return '';
+}
+
+function drawTideChart(canvasId, chartData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width;
+    const height = rect.height;
+    const padding = { top: 20, right: 20, bottom: 35, left: 45 };
+
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+
+    const heights = chartData.map(d => d.height);
+    const minHeight = Math.min(...heights, state.config.minimumHeight) - 0.5;
+    const maxHeight = Math.max(...heights) + 0.5;
+
+    const practiceStart = parseTime(state.config.startTime);
+    const practiceEnd = parseTime(state.config.endTime);
+
+    const getX = (time) => {
+        const minutes = time.hours * 60 + time.minutes;
+        return padding.left + (minutes / (24 * 60)) * chartWidth;
+    };
+    const getY = (h) => padding.top + chartHeight - ((h - minHeight) / (maxHeight - minHeight)) * chartHeight;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Practice window highlight
+    ctx.fillStyle = 'rgba(72, 202, 228, 0.15)';
+    ctx.fillRect(getX(practiceStart), padding.top, getX(practiceEnd) - getX(practiceStart), chartHeight);
+
+    // Practice window borders
+    ctx.strokeStyle = 'rgba(72, 202, 228, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(getX(practiceStart), padding.top);
+    ctx.lineTo(getX(practiceStart), height - padding.bottom);
+    ctx.moveTo(getX(practiceEnd), padding.top);
+    ctx.lineTo(getX(practiceEnd), height - padding.bottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Minimum tide line
+    ctx.strokeStyle = 'rgba(231, 76, 60, 0.7)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, getY(state.config.minimumHeight));
+    ctx.lineTo(width - padding.right, getY(state.config.minimumHeight));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Min tide label
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.9)';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Min: ${state.config.minimumHeight}ft`, padding.left + 5, getY(state.config.minimumHeight) - 5);
+
+    // Tide line
+    ctx.strokeStyle = '#48CAE4';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    chartData.forEach((point, i) => {
+        const x = getX(point.time);
+        const y = getY(point.height);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Gradient fill under curve
+    const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+    gradient.addColorStop(0, 'rgba(72, 202, 228, 0.3)');
+    gradient.addColorStop(1, 'rgba(72, 202, 228, 0.05)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    chartData.forEach((point, i) => {
+        const x = getX(point.time);
+        const y = getY(point.height);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.lineTo(getX(chartData[chartData.length - 1].time), height - padding.bottom);
+    ctx.lineTo(getX(chartData[0].time), height - padding.bottom);
+    ctx.closePath();
+    ctx.fill();
+
+    // X-axis (time labels)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    for (let h = 0; h <= 24; h += 4) {
+        const x = getX({ hours: h, minutes: 0 });
+        const label = h === 0 ? '12am' : h === 12 ? '12pm' : h < 12 ? `${h}am` : `${h - 12}pm`;
+        ctx.fillText(label, x, height - 10);
+    }
+
+    // Y-axis (height labels)
+    ctx.textAlign = 'right';
+    const yStep = Math.ceil((maxHeight - minHeight) / 4) || 1;
+    for (let h = Math.ceil(minHeight); h <= maxHeight; h += yStep) {
+        ctx.fillText(`${h}ft`, padding.left - 8, getY(h) + 4);
+    }
+
+    // Practice window label
+    ctx.fillStyle = 'rgba(72, 202, 228, 0.8)';
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    const labelX = (getX(practiceStart) + getX(practiceEnd)) / 2;
+    ctx.fillText('PRACTICE', labelX, padding.top + 15);
+}
+
 
 // === Utility Functions ===
 function formatDateForAPI(date) {
