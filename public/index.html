@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tides - Practice Tide Checker</title>
+    <meta name="description" content="Check if tides are safe for boating practice. Plan your season with confidence.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="landing-page">
+    <!-- Animated Background -->
+    <div class="bg-waves">
+        <div class="wave wave1"></div>
+        <div class="wave wave2"></div>
+        <div class="wave wave3"></div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="landing-container">
+        <!-- Hero Section -->
+        <header class="landing-hero">
+            <div class="logo large">
+                <span class="logo-icon">🌊</span>
+                <span class="logo-text">Tides</span>
+            </div>
+            <h1 class="landing-title">Practice Tide Checker</h1>
+            <p class="landing-subtitle">Plan safe water sports practice with real-time NOAA tide data</p>
+        </header>
+
+        <!-- Choice Cards -->
+        <div class="choice-grid">
+            <!-- One Time Check -->
+            <a href="onetime.html" class="choice-card glass-card">
+                <div class="choice-icon">📅</div>
+                <h2 class="choice-title">One Time Check</h2>
+                <p class="choice-description">Check tides for a specific date or date range. Perfect for planning
+                    individual practices or reviewing an entire season.</p>
+                <ul class="choice-features">
+                    <li>✓ Single day or date range</li>
+                    <li>✓ Season planning mode</li>
+                    <li>✓ Detailed tide charts</li>
+                </ul>
+                <span class="choice-cta">Get Started →</span>
+            </a>
+
+            <!-- Recurring Practice -->
+            <a href="recurring.html" class="choice-card glass-card featured">
+                <div class="featured-badge">Recommended</div>
+                <div class="choice-icon">🔄</div>
+                <h2 class="choice-title">Recurring Practice</h2>
+                <p class="choice-description">Set up your regular practice schedule and get a live dashboard showing
+                    upcoming practices with tide safety indicators.</p>
+                <ul class="choice-features">
+                    <li>✓ Weekly practice dashboard</li>
+                    <li>✓ 4-week forecast view</li>
+                    <li>✓ Shareable team links</li>
+                </ul>
+                <span class="choice-cta">Open Dashboard →</span>
+            </a>
+        </div>
+
+        <!-- Quick Info -->
+        <section class="landing-info">
+            <div class="info-item">
+                <span class="info-icon">🏛️</span>
+                <span class="info-text">Powered by NOAA</span>
+            </div>
+            <div class="info-item">
+                <span class="info-icon">⚡</span>
+                <span class="info-text">Real-time data</span>
+            </div>
+            <div class="info-item">
+                <span class="info-icon">🚣</span>
+                <span class="info-text">Built for water sports</span>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="landing-footer">
+            <p>Brought to you by <strong>Stanford Dragon Boat</strong></p>
+            <p class="credits-small">
+                Data by <a href="https://tidesandcurrents.noaa.gov/" target="_blank" rel="noopener">NOAA</a> •
+                <a href="https://github.com/CharlesDillon/tides" target="_blank" rel="noopener">Original Project by
+                    Lightwave</a>
+            </p>
+        </footer>
+    </main>
+</body>
+
+</html>

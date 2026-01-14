@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Dashboard - Tides</title>
+    <meta name="description" content="View your recurring practice schedule with tide safety indicators.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="bg-waves">
+        <div class="wave wave1"></div>
+        <div class="wave wave2"></div>
+        <div class="wave wave3"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <a href="index.html" class="logo">
+            <span class="logo-icon">🌊</span>
+            <span class="logo-text">Tides</span>
+        </a>
+        <nav class="header-nav">
+            <a href="index.html" class="nav-link">← Back</a>
+            <span class="nav-divider">|</span>
+            <span class="nav-current">🔄 Practice Dashboard</span>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container dashboard-container">
+
+        <!-- Setup Panel (shown when no schedule is configured) -->
+        <section id="setup-panel" class="setup-panel glass-card">
+            <div class="setup-header">
+                <h2>🔧 Configure Your Practice Schedule</h2>
+                <p>Set up your regular practice days and times to see the tide forecast.</p>
+            </div>
+
+            <!-- Station Selection -->
+            <div class="form-row">
+                <div class="form-group flex-grow">
+                    <label for="station">NOAA Station</label>
+                    <div class="station-input-group">
+                        <div class="select-wrapper flex-grow">
+                            <select id="station">
+                                <option value="">Loading stations...</option>
+                            </select>
+                            <span class="select-icon">▼</span>
+                        </div>
+                        <button type="button" id="custom-station-btn" class="icon-btn" title="Enter custom station ID">
+                            #
+                        </button>
+                        <input type="text" id="custom-station" class="custom-station-input hidden"
+                            placeholder="Station ID">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Minimum Height -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="minimum-height">Minimum Tide Height</label>
+                    <div class="height-input-row">
+                        <div class="input-group compact">
+                            <input type="number" id="minimum-height" value="2.0" step="0.1" min="0">
+                            <span class="input-suffix">ft</span>
+                        </div>
+                        <span class="datum-hint">Datum: MLLW</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Practice Days -->
+            <div class="form-group">
+                <label>Practice Days</label>
+                <div class="day-picker">
+                    <label class="day-chip"><input type="checkbox" name="day" value="0"><span>Sun</span></label>
+                    <label class="day-chip"><input type="checkbox" name="day" value="1"><span>Mon</span></label>
+                    <label class="day-chip"><input type="checkbox" name="day" value="2"><span>Tue</span></label>
+                    <label class="day-chip"><input type="checkbox" name="day" value="3"><span>Wed</span></label>
+                    <label class="day-chip"><input type="checkbox" name="day" value="4"><span>Thu</span></label>
+                    <label class="day-chip"><input type="checkbox" name="day" value="5"><span>Fri</span></label>
+                    <label class="day-chip"><input type="checkbox" name="day" value="6"><span>Sat</span></label>
+                </div>
+            </div>
+
+            <!-- Practice Time -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="start-time">Practice Start</label>
+                    <input type="time" id="start-time" value="11:00">
+                </div>
+                <div class="form-group">
+                    <label for="end-time">Practice End</label>
+                    <input type="time" id="end-time" value="13:30">
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="setup-actions">
+                <button id="load-dashboard-btn" class="primary-btn">
+                    <span class="btn-icon">📊</span>
+                    <span class="btn-text">Load Dashboard</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Dashboard (shown after configuration) -->
+        <section id="dashboard" class="dashboard hidden">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header glass-card">
+                <div class="dashboard-title">
+                    <h2>📊 Practice Forecast</h2>
+                    <p id="schedule-summary" class="schedule-summary"></p>
+                </div>
+                <div class="dashboard-actions">
+                    <button id="share-btn" class="secondary-btn">
+                        <span class="btn-icon">🔗</span>
+                        <span class="btn-text">Share</span>
+                    </button>
+                    <button id="edit-btn" class="secondary-btn">
+                        <span class="btn-icon">⚙️</span>
+                        <span class="btn-text">Edit</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Share Link (hidden by default) -->
+            <div id="share-panel" class="share-panel glass-card hidden">
+                <label>Shareable Link</label>
+                <div class="link-copy-row">
+                    <input type="text" id="share-link" readonly>
+                    <button type="button" id="copy-link-btn" class="icon-btn" title="Copy link">📋</button>
+                </div>
+                <p class="link-hint">Share this link with your team - it will always show their upcoming practices!</p>
+            </div>
+
+            <!-- 4-Week Calendar with Navigation -->
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <h3 class="section-title">📅 Practice Calendar</h3>
+                    <div class="calendar-legend">
+                        <span class="legend-item safe"><span class="legend-dot"></span> Safe</span>
+                        <span class="legend-item caution"><span class="legend-dot"></span> Caution</span>
+                        <span class="legend-item no-practice"><span class="legend-dot"></span> No Practice</span>
+                    </div>
+                </div>
+
+                <!-- Calendar Navigation -->
+                <div class="calendar-nav">
+                    <button type="button" id="prev-period-btn" class="nav-arrow">
+                        ← Previous 4 Weeks
+                    </button>
+                    <span id="period-label" class="period-label">Current Period</span>
+                    <button type="button" id="next-period-btn" class="nav-arrow">
+                        Next 4 Weeks →
+                    </button>
+                </div>
+
+                <div id="calendar-grid" class="calendar-grid">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Detailed View -->
+            <div id="detail-section" class="detail-section hidden">
+                <h3 class="section-title">📋 Practice Details</h3>
+                <div id="detail-container" class="detail-container">
+                    <!-- Dynamically populated when a day is clicked -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Disclaimer -->
+        <footer class="disclaimer glass-card">
+            <p><strong>⚠️ Disclaimer:</strong> Do not take this, or any piece of software, as authoritative over good
+                sense in boating.</p>
+            <p class="credits">Brought to you by <strong>Stanford Dragon Boat</strong> • Data by <a
+                    href="https://tidesandcurrents.noaa.gov/" target="_blank" rel="noopener">NOAA</a> • <a
+                    href="https://github.com/CharlesDillon/tides" target="_blank" rel="noopener">Original Project by
+                    Lightwave</a></p>
+        </footer>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-content">
+            <div class="wave-loader">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+            <p class="loading-text">Loading practice forecast...</p>
+        </div>
+    </div>
+
+    <script src="recurring.js"></script>
+</body>
+
+</html>
